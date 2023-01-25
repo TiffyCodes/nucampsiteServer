@@ -12,6 +12,10 @@ const session = require('express-session');
 const FileStore = require('session-file-store')(session);
 //***** */
 
+//** week III passport */
+const passport = require('passport');
+const authenticate = require('./authenticate');
+
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -86,19 +90,24 @@ app.use(session({
 //   }
 // }
 
+//** week III passpor; below will check if there is an existing session, and if so, the info will load as req.user (see auth fx) */
+app.use(passport.initialize());
+app.use(passport.session());
+
 //these routes were below the auth fx but moved up to above it-- see below where I commented out for explanation
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
 function auth(req, res, next) {
-  console.log(req.session);
-
+  // console.log(req.session);
+  console.log(req.user);
 
   // console.log(req.headers);
   // if (!req.signedCookies.user) {
     //signedCookies prop of the req obj is provided by cookie parser and it will parse a signed cookie from the req, if the cookie is not properly signer, it will return as false
     //if it is false, then it hasn't been authenticated, so we will challend the user to authenticate
-    if (!req.session.user) {
+    //  /if (!req.session.user) {
+    if (!req.user) {
     // const authHeader = req.headers.authorization;
     // if (!authHeader) {
         const err = new Error('You are not authenticated!');
@@ -126,16 +135,17 @@ function auth(req, res, next) {
     // if (req.signedCookies.user === 'admin') {
       // if (req.session.user === 'admin') {
       //if so will send to next middleware fx
-      if (req.session.user === 'authenticated') {
+      //  if (req.session.user === 'authenticated') {
       return next();
-    } else {
-      //will sent an error response
-        const err = new Error('You are not authenticated!');
-        err.status = 401;
-        return next(err);
-    }
+    // } else {
+    //   //will sent an error response
+    //     const err = new Error('You are not authenticated!');
+    //     err.status = 401;
+    //     return next(err);
+    // }
   }
 }
+
 app.use(auth);
 //*****Now test in incognito mode in browser (so doesn't keep info in cookies) and postman, for /campsites or any other pg will req auth*/
 //*** *************************************************************************/
