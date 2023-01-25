@@ -34,7 +34,9 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+//COOOKIES we need to add a "secret key" string as an argument to the cookie parser supplied by express generator- just came up with a random one 1234..
+//COOKIES it will be used to encrypt the info and sign the cookie sent from the server to the client
+app.use(cookieParser('12345-67890-09876-54321'));
 //*** *************************************************************************/
 //Week III- adding the ***authentication middleware*** here bc we don't need it before here to require a user to enter credentials.  The order matters.
 // function auth(req, res, next) {
@@ -62,28 +64,45 @@ app.use(cookieParser());
 // }
 
 function auth(req, res, next) {
-  console.log(req.headers);
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-      const err = new Error('You are not authenticated!');
-      res.setHeader('WWW-Authenticate', 'Basic');
-      err.status = 401;
-      return next(err);
-  }
+  // console.log(req.headers);
+  if (!req.signedCookies.user) {
+    //signedCookies prop of the req obj is provided by cookie parser and it will parse a signed cookie from the req, if the cookie is not properly signer, it will return as false
+    //if it is false, then it hasn't been authenticated, so we will challend the user to authenticate
+    
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        const err = new Error('You are not authenticated!');
+        res.setHeader('WWW-Authenticate', 'Basic');
+        err.status = 401;
+        return next(err);
+    }
 
-  const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-  const user = auth[0];
-  const pass = auth[1];
-  if (user === 'admin' && pass === 'password') {
-      return next(); // authorized
+    const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+    const user = auth[0];
+    const pass = auth[1];
+    if (user === 'admin' && pass === 'password') {
+      //since correct, we will set up a cookie here- we will create a cookie, will set up a name for the cookie- user, and the value to store in the name property of user obj that we will name admin, the third argument is optional and is an object that contains config values setting the property as signed to true
+      res.cookie('user', 'admin', {signed: true});
+        return next(); // authorized
+    } else {
+        const err = new Error('You are not authenticated!');
+        res.setHeader('WWW-Authenticate', 'Basic');      
+        err.status = 401;
+        return next(err);
+    }
   } else {
-      const err = new Error('You are not authenticated!');
-      res.setHeader('WWW-Authenticate', 'Basic');      
-      err.status = 401;
-      return next(err);
+    //Will check if a signed value in the cookie req
+    if (req.signedCookies.user === 'admin') {
+      //if so will send to next middleware fx
+      return next();
+    } else {
+      //will sent an error response
+        const err = new Error('You are not authenticated!');
+        err.status = 401;
+        return next(err);
+    }
   }
 }
-
 app.use(auth);
 //*****Now test in incognito mode in browser (so doesn't keep info in cookies) and postman, for /campsites or any other pg will req auth*/
 //*** *************************************************************************/
