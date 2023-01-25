@@ -86,6 +86,10 @@ app.use(session({
 //   }
 // }
 
+//these routes were below the auth fx but moved up to above it-- see below where I commented out for explanation
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+
 function auth(req, res, next) {
   console.log(req.session);
 
@@ -95,33 +99,34 @@ function auth(req, res, next) {
     //signedCookies prop of the req obj is provided by cookie parser and it will parse a signed cookie from the req, if the cookie is not properly signer, it will return as false
     //if it is false, then it hasn't been authenticated, so we will challend the user to authenticate
     if (!req.session.user) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
+    // const authHeader = req.headers.authorization;
+    // if (!authHeader) {
         const err = new Error('You are not authenticated!');
-        res.setHeader('WWW-Authenticate', 'Basic');
+        // res.setHeader('WWW-Authenticate', 'Basic');   //we now do this in the users router
         err.status = 401;
         return next(err);
-    }
+    // }
 
-    const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-    const user = auth[0];
-    const pass = auth[1];
-    if (user === 'admin' && pass === 'password') {
-      //since correct, we will set up a cookie here- we will create a cookie, will set up a name for the cookie- user, and the value to store in the name property of user obj that we will name admin, the third argument is optional and is an object that contains config values setting the property as signed to true
-      // res.cookie('user', 'admin', {signed: true});
-      req.session.user = 'admin';
-        return next(); // authorized
-    } else {
-        const err = new Error('You are not authenticated!');
-        res.setHeader('WWW-Authenticate', 'Basic');      
-        err.status = 401;
-        return next(err);
-    }
+    // const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+    // const user = auth[0];
+    // const pass = auth[1];
+    // if (user === 'admin' && pass === 'password') {
+    //   //since correct, we will set up a cookie here- we will create a cookie, will set up a name for the cookie- user, and the value to store in the name property of user obj that we will name admin, the third argument is optional and is an object that contains config values setting the property as signed to true
+    //   // res.cookie('user', 'admin', {signed: true});
+    //   req.session.user = 'admin';
+    //     return next(); // authorized
+    // } else {
+    //     const err = new Error('You are not authenticated!');
+    //     res.setHeader('WWW-Authenticate', 'Basic');      
+    //     err.status = 401;
+    //     return next(err);
+    // }
   } else {
     //Will check if a signed value in the cookie req
     // if (req.signedCookies.user === 'admin') {
-      if (req.session.user === 'admin') {
+      // if (req.session.user === 'admin') {
       //if so will send to next middleware fx
+      if (req.session.user === 'authenticated') {
       return next();
     } else {
       //will sent an error response
@@ -136,8 +141,9 @@ app.use(auth);
 //*** *************************************************************************/
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+//moving this to BEFORE the auth fx so can create one before authentication- and we will redirect them to index page after- move to above the auth fx
+// app.use('/', indexRouter);
+// app.use('/users', usersRouter);
 //SETUP- add the routers from node-express to app.use as well
 app.use('/campsites', campsiteRouter);
 app.use('/promotions', promotionRouter);
