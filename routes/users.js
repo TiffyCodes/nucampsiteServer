@@ -3,6 +3,8 @@ const User = require('../models/user');
 const router = express.Router();
 //** Week III add passport auth */
 const passport = require('passport');
+//Change to Tokens week III
+const authenticate = require('../authenticate');
 
 
 
@@ -102,9 +104,12 @@ router.post('/signup', (req, res ) => {
 //   }
 //** Week II replace with passport */
 router.post('/login', passport.authenticate('local'), (req, res) => {
+  //adding to issue a token below
+  const token = authenticate.getToken({_id: req.user._id});
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
-  res.json({success: true, status: 'Youare successfully loggeed in!'});
+  // res.json({success: true, status: 'Youare successfully loggeed in!'});
+  res.json({success: true, token: token, status: 'Youare successfully loggeed in!'});
 });
 
 //logging out the user, since not sending info, we will use a get

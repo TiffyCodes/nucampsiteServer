@@ -1,20 +1,21 @@
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
-var cookieParser = require('cookie-parser');
+// var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 
 //***Express Sessions (removing cookieParser) */
 //importing express ssession module to store authentication here vs cookies ??
-const session = require('express-session');
+// const session = require('express-session');
 //adding 2 sets of parameters after a fx call like this.  A fx can return another fx in JS.  the required fx will return another fx with a return value and we will call that with the parameter list of session
-const FileStore = require('session-file-store')(session);
+// const FileStore = require('session-file-store')(session);
 //***** */
 
 //** week III passport */
 const passport = require('passport');
-const authenticate = require('./authenticate');
+// const authenticate = require('./authenticate');
+const config = require('./config');
 
 
 var indexRouter = require('./routes/index');
@@ -26,7 +27,9 @@ const partnerRouter = require('./routes/partnerRouter');
 
 //connect to server
 const mongoose = require('mongoose');
-const url = 'mongodb://localhost:27017/nucampsite';
+//const url = 'mongodb://localhost:27017/nucampsite';
+//FOR TOKENS week III
+const url = config.mongoUrl;
 const connect = mongoose.connect(url, {
   useCreateIndex: true,
   useFindAndModify: false,
@@ -51,16 +54,16 @@ app.use(express.urlencoded({ extended: false }));
 //COOKIES it will be used to encrypt the info and sign the cookie sent from the server to the client
 // app.use(cookieParser('12345-67890-09876-54321'));
 
-//*** Replacing Cookies with Express Session Middleware */
-app.use(session({
-  name: 'session-id',
-  secret: '12345-67890-09876-54321',
-  //below - if no updates, it won't get saved and n cookie will be sent to the client- prevents empty session files and cookies being setup
-  saveUninitialized: false,
-  //below so doesn't make an update if user not done I think
-  resave: false,
-  store: new FileStore()
-}));
+//*** REMOVED TO USE TOKENS ISNTEAD FOR AUTH- Replacing Cookies with Express Session Middleware */
+// app.use(session({
+//   name: 'session-id',
+//   secret: '12345-67890-09876-54321',
+//   //below - if no updates, it won't get saved and n cookie will be sent to the client- prevents empty session files and cookies being setup
+//   saveUninitialized: false,
+//   //below so doesn't make an update if user not done I think
+//   resave: false,
+//   store: new FileStore()
+// }));
 //*** */
 
 
@@ -92,61 +95,61 @@ app.use(session({
 
 //** week III passpor; below will check if there is an existing session, and if so, the info will load as req.user (see auth fx) */
 app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.session());
 
 //these routes were below the auth fx but moved up to above it-- see below where I commented out for explanation
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-function auth(req, res, next) {
-  // console.log(req.session);
-  console.log(req.user);
+// function auth(req, res, next) {
+//   // console.log(req.session);
+//   console.log(req.user);
 
-  // console.log(req.headers);
-  // if (!req.signedCookies.user) {
-    //signedCookies prop of the req obj is provided by cookie parser and it will parse a signed cookie from the req, if the cookie is not properly signer, it will return as false
-    //if it is false, then it hasn't been authenticated, so we will challend the user to authenticate
-    //  /if (!req.session.user) {
-    if (!req.user) {
-    // const authHeader = req.headers.authorization;
-    // if (!authHeader) {
-        const err = new Error('You are not authenticated!');
-        // res.setHeader('WWW-Authenticate', 'Basic');   //we now do this in the users router
-        err.status = 401;
-        return next(err);
-    // }
+//   // console.log(req.headers);
+//   // if (!req.signedCookies.user) {
+//     //signedCookies prop of the req obj is provided by cookie parser and it will parse a signed cookie from the req, if the cookie is not properly signer, it will return as false
+//     //if it is false, then it hasn't been authenticated, so we will challend the user to authenticate
+//     //  /if (!req.session.user) {
+//     if (!req.user) {
+//     // const authHeader = req.headers.authorization;
+//     // if (!authHeader) {
+//         const err = new Error('You are not authenticated!');
+//         // res.setHeader('WWW-Authenticate', 'Basic');   //we now do this in the users router
+//         err.status = 401;
+//         return next(err);
+//     // }
 
-    // const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-    // const user = auth[0];
-    // const pass = auth[1];
-    // if (user === 'admin' && pass === 'password') {
-    //   //since correct, we will set up a cookie here- we will create a cookie, will set up a name for the cookie- user, and the value to store in the name property of user obj that we will name admin, the third argument is optional and is an object that contains config values setting the property as signed to true
-    //   // res.cookie('user', 'admin', {signed: true});
-    //   req.session.user = 'admin';
-    //     return next(); // authorized
-    // } else {
-    //     const err = new Error('You are not authenticated!');
-    //     res.setHeader('WWW-Authenticate', 'Basic');      
-    //     err.status = 401;
-    //     return next(err);
-    // }
-  } else {
-    //Will check if a signed value in the cookie req
-    // if (req.signedCookies.user === 'admin') {
-      // if (req.session.user === 'admin') {
-      //if so will send to next middleware fx
-      //  if (req.session.user === 'authenticated') {
-      return next();
-    // } else {
-    //   //will sent an error response
-    //     const err = new Error('You are not authenticated!');
-    //     err.status = 401;
-    //     return next(err);
-    // }
-  }
-}
+//     // const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+//     // const user = auth[0];
+//     // const pass = auth[1];
+//     // if (user === 'admin' && pass === 'password') {
+//     //   //since correct, we will set up a cookie here- we will create a cookie, will set up a name for the cookie- user, and the value to store in the name property of user obj that we will name admin, the third argument is optional and is an object that contains config values setting the property as signed to true
+//     //   // res.cookie('user', 'admin', {signed: true});
+//     //   req.session.user = 'admin';
+//     //     return next(); // authorized
+//     // } else {
+//     //     const err = new Error('You are not authenticated!');
+//     //     res.setHeader('WWW-Authenticate', 'Basic');      
+//     //     err.status = 401;
+//     //     return next(err);
+//     // }
+//   } else {
+//     //Will check if a signed value in the cookie req
+//     // if (req.signedCookies.user === 'admin') {
+//       // if (req.session.user === 'admin') {
+//       //if so will send to next middleware fx
+//       //  if (req.session.user === 'authenticated') {
+//       return next();
+//     // } else {
+//     //   //will sent an error response
+//     //     const err = new Error('You are not authenticated!');
+//     //     err.status = 401;
+//     //     return next(err);
+//     // }
+//   }
+// }
 
-app.use(auth);
+// app.use(auth);
 //*****Now test in incognito mode in browser (so doesn't keep info in cookies) and postman, for /campsites or any other pg will req auth*/
 //*** *************************************************************************/
 app.use(express.static(path.join(__dirname, 'public')));

@@ -4,6 +4,7 @@ const express = require('express');
 //set up a new router
 const promotionRouter = express.Router();
 const Promotion = require('../models/promotion');
+const authenticate = require('../authenticate');
 
 promotionRouter.route('/')
 // .all((req, res, next) => {
@@ -29,7 +30,7 @@ promotionRouter.route('/')
     .catch(err => next(err));
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
-.post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
     // res.end(`Will add the promotion: ${req.body.name} with description: ${req.body.description}`);
     Promotion.create(req.body)
     .then(promotion => {
@@ -40,11 +41,11 @@ promotionRouter.route('/')
     })
     .catch(err => next(err));
 })
-.put((req, res) => {
+.put(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /promotions');
 })
-.delete((req, res) => {
+.delete(authenticate.verifyUser, (req, res) => {
     //later when we study authentication, we willl explore how to restrict this to only priviledged users
     // res.end('Deleting all promotions')
     Promotion.deleteMany()
@@ -80,11 +81,11 @@ promotionRouter.route('/:promotionId')
     .catch(err => next(err));
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
-.post((req, res) => {
+.post(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /promotions/${req.params.promotionId}`);
 })
-.put((req, res) => {
+.put(authenticate.verifyUser, (req, res) => {
     // res.write(`Updating the promotion: ${req.params.promotionId} \n`);
     // res.end(`Will update the promotion: ${req.body.name}
     // with description: ${req.body.description}`);
@@ -98,7 +99,7 @@ promotionRouter.route('/:promotionId')
     })
     .catch(err => next(err));
 })
-.delete((req, res) => {
+.delete(authenticate.verifyUser, (req, res) => {
     //later when we study authentication, we willl explore how to restrict this to only priviledged users
     // res.end(`Deleting promotion: ${req.params.promotionId}`)
     Promotion.findByIdAndDelete(req.params.promotionId)

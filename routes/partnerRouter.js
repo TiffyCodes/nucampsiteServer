@@ -4,6 +4,7 @@ const express = require('express');
 //set up a new router
 const partnerRouter = express.Router();
 const Partner = require('../models/partner');
+const authenticate = require('../authenticate');
 
 partnerRouter.route('/')
 // .all((req, res, next) => {
@@ -30,7 +31,7 @@ partnerRouter.route('/')
     .catch(err => next(err));
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
-.post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
     // res.end(`Will add the partner: ${req.body.name} with description: ${req.body.description}`);
     Partner.create(req.body)
     .then(partner => {
@@ -41,11 +42,11 @@ partnerRouter.route('/')
     })
     .catch(err => next(err));
 })
-.put((req, res) => {
+.put(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /partners');
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
     //later when we study authentication, we willl explore how to restrict this to only priviledged users
     // res.end('Deleting all partners')
     Partner.deleteMany()
@@ -80,11 +81,11 @@ partnerRouter.route('/:partnerId')
     .catch(err => next(err));
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
-.post((req, res) => {
+.post(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /partners/${req.params.partnerId}`);
 })
-.put((req, res, next) => {
+.put(authenticate.verifyUser, (req, res, next) => {
     // res.write(`Updating the partner: ${req.params.partnerId} \n`);
     // res.end(`Will update the partner: ${req.body.name}
     // with description: ${req.body.description}`);
@@ -98,7 +99,7 @@ partnerRouter.route('/:partnerId')
     })
     .catch(err => next(err));
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
     //later when we study authentication, we willl explore how to restrict this to only priviledged users
     // res.end(`Deleting partner: ${req.params.partnerId}`)
     Partner.findByIdAndDelete(req.params.partnerId)

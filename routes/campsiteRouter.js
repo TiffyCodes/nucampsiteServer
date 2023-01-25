@@ -5,6 +5,7 @@ const express = require('express');
 //set up a new router
 const campsiteRouter = express.Router();
 //updating router to be able to interact with campsites data from DB
+const authenticate = require('../authenticate');  //added for tokens
 const Campsite = require('../models/campsite');
 
 campsiteRouter.route('/')
@@ -33,7 +34,8 @@ campsiteRouter.route('/')
     .catch(err => next(err));
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
-.post((req, res, next) => {
+// .post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
     //will get the info from the request body, mongoose will check the data to make sure it fits the Schema
     Campsite.create(req.body)
     .then(campsite => {
@@ -46,11 +48,11 @@ campsiteRouter.route('/')
     // res.end(`Will add the campsites: ${req.body.name} with description: ${req.body.description}`);
 })
 //don't need to add next here bc put is not allowed
-.put((req, res) => {
+.put(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /campsites');
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
     //later when we study authentication, we willl explore how to restrict this to only priviledged users
     // res.end('Deleting all campsites')
     Campsite.deleteMany()
@@ -84,12 +86,12 @@ campsiteRouter.route("/:campsiteId")
     .catch(err => next(err));
 })
 // don't need to add next bc aren't accepting post requests
-.post((req, res) => {
+.post(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /campsites/${req.params.campsiteId}`);
 })
 
-.put((req, res, next) => {
+.put(authenticate.verifyUser, (req, res, next) => {
     // res.write(`Updating the campsite: ${req.params.campsiteId} \n`);
     // res.end(`Will update the campsite: ${req.body.name}
     // with description: ${req.body.description}`);
@@ -107,7 +109,7 @@ campsiteRouter.route("/:campsiteId")
     .catch(err => next(err));
     })
 
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
     // res.end(`Deleting campsite: ${req.params.campsiteId}`);
     Campsite.findByIdAndDelete(req.params.campsiteId)
     .then(response => {
@@ -143,7 +145,7 @@ campsiteRouter.route('/:campsiteId/comments')
     .catch(err => next(err));
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
-.post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
     //will get the info from the request body, mongoose will check the data to make sure it fits the Schema
     Campsite.findById(req.params.campsiteId)
     //now we need to access only the comments for this SINGULARcampsite, not all campsite info
@@ -169,11 +171,11 @@ campsiteRouter.route('/:campsiteId/comments')
     .catch(err => next(err));
 })
 //don't need to add next here bc put is not allowed
-.put((req, res) => {
+.put(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end(`PUT operation not supported on /campsites/${req.params.campsiteId}/comments`);
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     //now we need to access only the comments for this SINGULARcampsite, not all campsite info
     .then(campsite => {
@@ -230,13 +232,13 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
     .catch(err => next(err));
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
-.post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
     //not supported
     res.statusCode = 403;
     res.end(`POST operation not supported on /campsites/${req.params.campsiteId}/comments/${req.params.commentId}`);
 })
 //don't need to add next here bc put is not allowed
-.put((req, res, next) => {
+.put(authenticate.verifyUser, (req, res, next) => {
     //we'd only want to update certain parts of the comment- not author or title
     Campsite.findById(req.params.campsiteId)
     //now we need to access only the comments for this SINGULARcampsite, not all campsite info
@@ -269,7 +271,7 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
     // res.end('Will send all the campsites to you');
     .catch(err => next(err));
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     //now we need to access only the comments for this SINGULARcampsite, not all campsite info
     .then(campsite => {
