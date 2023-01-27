@@ -24,6 +24,8 @@ campsiteRouter.route('/')
 .get((req, res, next) => {
     //res and headers are set by app.all so only out...
     Campsite.find()
+    //insert an additional operation (below)- will tell the app that when campsites doc is retrieved, to populate the author field of the comments sub doc by finding the user doc that matches the object id stored there
+    .populate('comments.author')
     .then(campsites => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -78,6 +80,8 @@ campsiteRouter.route("/:campsiteId")
 .get((req, res, next) => {
     // res.end(`Will send details of the campsite: ${req.params.campsiteId} to you`);
     Campsite.findById(req.params.campsiteId)
+    //adding operation here as well
+    .populate('comments.author')
     .then(campsite => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -123,11 +127,12 @@ campsiteRouter.route("/:campsiteId")
 
 //******* To access comments (which is a sub) inside of the campsites document */
 campsiteRouter.route('/:campsiteId/comments')
-
 .get((req, res, next) => {
     //res and headers are set by app.all so only out...
     Campsite.findById(req.params.campsiteId)
     //now we need to access only the comments for this SINGULARcampsite, not all campsite info
+    //adding operation here below as well
+    .populate('comments.author')
     .then(campsite => {
         if (campsite) {
         res.statusCode = 200;
@@ -151,6 +156,9 @@ campsiteRouter.route('/:campsiteId/comments')
     //now we need to access only the comments for this SINGULARcampsite, not all campsite info
     .then(campsite => {
         if (campsite) {
+        //For Mongoose Populaton , we want to add id of a current user to that request body as the author, before it gets pushed to the comments array, can do before the push operation like so
+        req.body.author = req.user._id;
+        //above will ensure that when the comment is saved, it will have the id of the user who submitted the comment in the author field, so that later we can access it to populate this field
         campsite.comments.push(req.body);
         //to save the comment.. lower c campsite NOT uppercase
         campsite.save()
@@ -206,11 +214,12 @@ campsiteRouter.route('/:campsiteId/comments')
 
 //******  FOR SINGLE COMMENT DELETE*/
 campsiteRouter.route('/:campsiteId/comments/:commentId')
-
 .get((req, res, next) => {
     //res and headers are set by app.all so only out...
     Campsite.findById(req.params.campsiteId)
     //now we need to access only the comments for this SINGULARcampsite, not all campsite info
+    //adding operation here below as well
+    .populate('comments.author')
     .then(campsite => {
         if (campsite && campsite.comments.id(req.params.commentId)) {
         res.statusCode = 200;

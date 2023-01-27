@@ -42,7 +42,8 @@ router.post('/signup', (req, res ) => {
   User.register(
     new User({username: req.body.username}),
     req.body.password,
-    err => {
+    // err => {
+    (err, user) => {
       if (err) {
         //if something went wrong while trying to register like db config
         res.statusCode = 500;
@@ -50,11 +51,25 @@ router.post('/signup', (req, res ) => {
         res.json({err: err});
       } else {
         //the authenticate method will return a fx and we will need to call it by setting up a second fx
+        if (req.body.firstname) {
+          user.firstname = req.body.firstname;
+        }
+        if (req.body.lastname) {
+          user.lastname = req.body.lastname;
+        }
+        user.save(err => {
+          if (err) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.json({err: err});
+            return;
+          }
         passport.authenticate('local')(req, res, () => {
           res.statusCode = 200;
           res.setHeader('Content-Type', 'application/json');
           res.json({success: true, status: 'Registration Successful!'});
         });
+      });
       }
     }
   );

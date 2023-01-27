@@ -19,6 +19,15 @@ const userSchema = new Schema({
     admin: {
         type: Boolean,
         default: false
+    },
+    //add below to use Mongoose Popuation to have docs ref other docs with NOSQL
+    firstname: {
+        type: String,
+        default: ''
+    },
+    lastname: {
+        type: String,
+        default: ''
     }
 });
 
