@@ -37,7 +37,7 @@ campsiteRouter.route('/')
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
 // .post((req, res, next) => {
-.post(authenticate.verifyUser, (req, res, next) => {
+.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     //will get the info from the request body, mongoose will check the data to make sure it fits the Schema
     Campsite.create(req.body)
     .then(campsite => {
@@ -54,7 +54,7 @@ campsiteRouter.route('/')
     res.statusCode = 403;
     res.end('PUT operation not supported on /campsites');
 })
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     //later when we study authentication, we willl explore how to restrict this to only priviledged users
     // res.end('Deleting all campsites')
     Campsite.deleteMany()
@@ -95,7 +95,7 @@ campsiteRouter.route("/:campsiteId")
     res.end(`POST operation not supported on /campsites/${req.params.campsiteId}`);
 })
 
-.put(authenticate.verifyUser, (req, res, next) => {
+.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     // res.write(`Updating the campsite: ${req.params.campsiteId} \n`);
     // res.end(`Will update the campsite: ${req.body.name}
     // with description: ${req.body.description}`);
@@ -113,7 +113,7 @@ campsiteRouter.route("/:campsiteId")
     .catch(err => next(err));
     })
 
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     // res.end(`Deleting campsite: ${req.params.campsiteId}`);
     Campsite.findByIdAndDelete(req.params.campsiteId)
     .then(response => {
@@ -183,7 +183,7 @@ campsiteRouter.route('/:campsiteId/comments')
     res.statusCode = 403;
     res.end(`PUT operation not supported on /campsites/${req.params.campsiteId}/comments`);
 })
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     //now we need to access only the comments for this SINGULARcampsite, not all campsite info
     .then(campsite => {
@@ -248,43 +248,57 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
 })
 //don't need to add next here bc put is not allowed
 .put(authenticate.verifyUser, (req, res, next) => {
-    //we'd only want to update certain parts of the comment- not author or title
-    Campsite.findById(req.params.campsiteId)
-    //now we need to access only the comments for this SINGULARcampsite, not all campsite info
-    .then(campsite => {
-        if (campsite && campsite.comments.id(req.params.commentId)) {
-            if (req.body.rating) {
-                campsite.comments.id(req.params.commentId).rating = req.body.rating;
-            }
-            if (req.body.text) {
-                campsite.comments.id(req.params.commentId).text = req.body.text;
-            }
-            campsite.save()
-            .then(campsite => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(campsite);
-            })
-            .catch(err => next(err));
-        //the above will automatically close the stream afterwards, so don't need res.end
-    } else if (!campsite){
-        err = new Error(`Campsite ${req.params.campsiteId} not found.`);
-        err.status = 404;
-        return next(err);
-    }   else {
-        err = new Error(`Comment ${req.params.commentId} not found.`);
-        err.status = 404;
-        return next(err);
-    }
-    })
-    // res.end('Will send all the campsites to you');
-    .catch(err => next(err));
+    
+        //we'd only want to update certain parts of the comment- not author or title
+        Campsite.findById(req.params.campsiteId)
+        //now we need to access only the comments for this SINGULARcampsite, not all campsite info
+        .then(campsite => {
+            if (campsite && campsite.comments.id(req.params.commentId)) {
+                const authorId = campsite.comments.id(req.params.commentId).author._id
+                // if (comment.author.equals(req.user._id) {
+                    if(!authorId.equals(req.user._id)) {
+                        res.statusCode = 403;
+                        return next(new Error('You are not authorized to change this comment.'));
+                    }
+                    if (req.body.rating) {
+                        campsite.comments.id(req.params.commentId).rating = req.body.rating;
+                    }
+                    if (req.body.text) {
+                        campsite.comments.id(req.params.commentId).text = req.body.text;
+                    }
+                    campsite.save()
+                        .then(campsite => {
+                            res.statusCode = 200;
+                            res.setHeader('Content-Type', 'application/json');
+                            res.json(campsite);
+                        }) 
+                    .catch(err => next(err));
+            //the above will automatically close the stream afterwards, so don't need res.end
+        } else if (!campsite){
+            err = new Error(`Campsite ${req.params.campsiteId} not found.`);
+            err.status = 404;
+            return next(err);
+        }   else {
+            err = new Error(`Comment ${req.params.commentId} not found.`);
+            err.status = 404;
+            return next(err);
+        }
+        // res.end('Will send all the campsites to you');
+     }) 
+     .catch(err => next(err));
+    
 })
 .delete(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     //now we need to access only the comments for this SINGULARcampsite, not all campsite info
     .then(campsite => {
         if (campsite && campsite.comments.id(req.params.commentId)) {
+            const authorId = campsite.comments.id(req.params.commentId).author._id
+            // if (comment.author.equals(req.user._id) {
+            if(!authorId.equals(req.user._id)) {
+                res.statusCode = 403;
+                return next(new Error('You are not authorized to change this comment.'));      
+            }
             campsite.comments.id(req.params.commentId).remove();
             campsite.save()
             .then(campsite => {

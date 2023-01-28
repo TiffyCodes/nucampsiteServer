@@ -6,6 +6,7 @@ const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const jwt = require('jsonwebtoken');
 const config = require('./config.js');
+const { authenticate } = require('passport');
 
 //below requires a verify pw fx- will use the authenticate method (a method on the user model user.auth..)
 exports.local = passport.use(new LocalStrategy(User.authenticate()));
@@ -47,3 +48,56 @@ exports.jwtPassport = passport.use(
 )
 exports.verifyUser = passport.authenticate('jwt', {session: false});
 //session false makes it so we aren't using sessions we will create this const so we don't have to keep re-writing the jwt and session: false
+
+//Week III Workshop (admin authenticate)
+// exports.verifyAdmin = passport.authenticate(req.user.admin= 'true');
+
+// exports.myMiddlewareOnylCharlie = function(req, res, next) {
+//     if (req.user.user === 'charlie') {
+//         next()
+//     } {
+//         next(new Error('Not Cahrlie'))
+//     }
+// }
+
+exports.verifyAdmin = function(req, res, next) {
+    // if (req.user.user === 'Simba') {
+    if (req.user.admin) {
+        next();
+    } else {
+        res.statusCode= 403;
+        // next(new Error("You are not authorized to perform this operation!"));
+        let err= new Error('You are not authorized to perform this operation!');
+        return next(err);
+        
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// add authenticate.onlyCahrlie to posts get EventCounts
+// //task 3
+// copy res.send('rspond with a resource'); from promotions/actions just change entities
+//task 4
+//change from /commentsID.. under first if statment add:
+//const user = req.user;
+//const comment = "comment above after &&;
+//if (comment.author.equals(req.user._id))   ** can't use:  ==== user._id)  bc both objects
+//"

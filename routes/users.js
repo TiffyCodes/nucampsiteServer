@@ -9,8 +9,24 @@ const authenticate = require('../authenticate');
 
 
 /* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
+//**my stab at it first */
+// router.get('/', function(req, res, next) {
+//   // res.send('respond with a resource');
+//   if (authenticate.verifyAdmin) {
+//     res.send('respond with a resource');
+//   } else {
+
+//   }
+// });
+
+router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
+  User.find()
+  .then(users => {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.json(users);
+  })
+  .catch(err => next(err));
 });
 
 //for the below- after path argument, need to pass a middleware argument

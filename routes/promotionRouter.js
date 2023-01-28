@@ -30,7 +30,7 @@ promotionRouter.route('/')
     .catch(err => next(err));
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
-.post(authenticate.verifyUser, (req, res, next) => {
+.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     // res.end(`Will add the promotion: ${req.body.name} with description: ${req.body.description}`);
     Promotion.create(req.body)
     .then(promotion => {
@@ -45,7 +45,7 @@ promotionRouter.route('/')
     res.statusCode = 403;
     res.end('PUT operation not supported on /promotions');
 })
-.delete(authenticate.verifyUser, (req, res) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     //later when we study authentication, we willl explore how to restrict this to only priviledged users
     // res.end('Deleting all promotions')
     Promotion.deleteMany()
@@ -85,7 +85,7 @@ promotionRouter.route('/:promotionId')
     res.statusCode = 403;
     res.end(`POST operation not supported on /promotions/${req.params.promotionId}`);
 })
-.put(authenticate.verifyUser, (req, res) => {
+.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     // res.write(`Updating the promotion: ${req.params.promotionId} \n`);
     // res.end(`Will update the promotion: ${req.body.name}
     // with description: ${req.body.description}`);
@@ -99,7 +99,7 @@ promotionRouter.route('/:promotionId')
     })
     .catch(err => next(err));
 })
-.delete(authenticate.verifyUser, (req, res) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     //later when we study authentication, we willl explore how to restrict this to only priviledged users
     // res.end(`Deleting promotion: ${req.params.promotionId}`)
     Promotion.findByIdAndDelete(req.params.promotionId)
