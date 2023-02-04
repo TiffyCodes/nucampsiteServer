@@ -7,6 +7,8 @@ const campsiteRouter = express.Router();
 //updating router to be able to interact with campsites data from DB
 const authenticate = require('../authenticate');  //added for tokens
 const Campsite = require('../models/campsite');
+//cors- routes week IV add below
+const cors = require('./cors');
 
 campsiteRouter.route('/')
 //the path doesn't need to be campsites since we will set it up in server.js, first set up the require
@@ -21,7 +23,10 @@ campsiteRouter.route('/')
 //will catch all, we will use to set properties on the res obj
 //any http with this path will trigger this method
 //set up a path to a get req
-.get((req, res, next) => {
+
+//cors- routes week IV add below
+.options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+.get(cors.cors, (req, res, next) => {
     //res and headers are set by app.all so only out...
     Campsite.find()
     //insert an additional operation (below)- will tell the app that when campsites doc is retrieved, to populate the author field of the comments sub doc by finding the user doc that matches the object id stored there
@@ -37,7 +42,7 @@ campsiteRouter.route('/')
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
 // .post((req, res, next) => {
-.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     //will get the info from the request body, mongoose will check the data to make sure it fits the Schema
     Campsite.create(req.body)
     .then(campsite => {
@@ -50,11 +55,11 @@ campsiteRouter.route('/')
     // res.end(`Will add the campsites: ${req.body.name} with description: ${req.body.description}`);
 })
 //don't need to add next here bc put is not allowed
-.put(authenticate.verifyUser, (req, res) => {
+.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /campsites');
 })
-.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     //later when we study authentication, we willl explore how to restrict this to only priviledged users
     // res.end('Deleting all campsites')
     Campsite.deleteMany()
@@ -77,7 +82,8 @@ campsiteRouter.route("/:campsiteId")
 //     res.setHeader('Content-Type', 'text/plain');
 //     next();
 // })
-.get((req, res, next) => {
+.options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+.get(cors.cors, (req, res, next) => {
     // res.end(`Will send details of the campsite: ${req.params.campsiteId} to you`);
     Campsite.findById(req.params.campsiteId)
     //adding operation here as well
@@ -90,12 +96,12 @@ campsiteRouter.route("/:campsiteId")
     .catch(err => next(err));
 })
 // don't need to add next bc aren't accepting post requests
-.post(authenticate.verifyUser, (req, res) => {
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /campsites/${req.params.campsiteId}`);
 })
 
-.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     // res.write(`Updating the campsite: ${req.params.campsiteId} \n`);
     // res.end(`Will update the campsite: ${req.body.name}
     // with description: ${req.body.description}`);
@@ -113,7 +119,7 @@ campsiteRouter.route("/:campsiteId")
     .catch(err => next(err));
     })
 
-.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     // res.end(`Deleting campsite: ${req.params.campsiteId}`);
     Campsite.findByIdAndDelete(req.params.campsiteId)
     .then(response => {
@@ -127,7 +133,8 @@ campsiteRouter.route("/:campsiteId")
 
 //******* To access comments (which is a sub) inside of the campsites document */
 campsiteRouter.route('/:campsiteId/comments')
-.get((req, res, next) => {
+.options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+.get(cors.cors, (req, res, next) => {
     //res and headers are set by app.all so only out...
     Campsite.findById(req.params.campsiteId)
     //now we need to access only the comments for this SINGULARcampsite, not all campsite info
@@ -150,7 +157,7 @@ campsiteRouter.route('/:campsiteId/comments')
     .catch(err => next(err));
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
-.post(authenticate.verifyUser, (req, res, next) => {
+.post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     //will get the info from the request body, mongoose will check the data to make sure it fits the Schema
     Campsite.findById(req.params.campsiteId)
     //now we need to access only the comments for this SINGULARcampsite, not all campsite info
@@ -179,11 +186,11 @@ campsiteRouter.route('/:campsiteId/comments')
     .catch(err => next(err));
 })
 //don't need to add next here bc put is not allowed
-.put(authenticate.verifyUser, (req, res) => {
+.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end(`PUT operation not supported on /campsites/${req.params.campsiteId}/comments`);
 })
-.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     //now we need to access only the comments for this SINGULARcampsite, not all campsite info
     .then(campsite => {
@@ -214,7 +221,8 @@ campsiteRouter.route('/:campsiteId/comments')
 
 //******  FOR SINGLE COMMENT DELETE*/
 campsiteRouter.route('/:campsiteId/comments/:commentId')
-.get((req, res, next) => {
+.options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+.get(cors.cors, (req, res, next) => {
     //res and headers are set by app.all so only out...
     Campsite.findById(req.params.campsiteId)
     //now we need to access only the comments for this SINGULARcampsite, not all campsite info
@@ -241,13 +249,13 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
     .catch(err => next(err));
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
-.post(authenticate.verifyUser, (req, res, next) => {
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     //not supported
     res.statusCode = 403;
     res.end(`POST operation not supported on /campsites/${req.params.campsiteId}/comments/${req.params.commentId}`);
 })
 //don't need to add next here bc put is not allowed
-.put(authenticate.verifyUser, (req, res, next) => {
+.put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     
         //we'd only want to update certain parts of the comment- not author or title
         Campsite.findById(req.params.campsiteId)
@@ -288,7 +296,7 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
      .catch(err => next(err));
     
 })
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     //now we need to access only the comments for this SINGULARcampsite, not all campsite info
     .then(campsite => {

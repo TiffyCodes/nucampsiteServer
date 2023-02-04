@@ -28,7 +28,8 @@ const userSchema = new Schema({
     lastname: {
         type: String,
         default: ''
-    }
+    },
+    facebookId: String
 });
 
 //** Week 3 add below (plugin) for authentication */

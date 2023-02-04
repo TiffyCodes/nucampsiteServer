@@ -5,6 +5,8 @@ const router = express.Router();
 const passport = require('passport');
 //Change to Tokens week III
 const authenticate = require('../authenticate');
+//cors- routes week IV add below
+const cors = require('./cors');
 
 
 
@@ -19,7 +21,7 @@ const authenticate = require('../authenticate');
 //   }
 // });
 
-router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
+router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
   User.find()
   .then(users => {
     res.statusCode = 200;
@@ -27,6 +29,16 @@ router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function(req,
     res.json(users);
   })
   .catch(err => next(err));
+});
+
+//added week IV for FB
+router.get('/facebook/token', passport.authenticate('facebook-token'), (req, res) => {
+  if (req.user) {
+      const token = authenticate.getToken({_id: req.user._id});
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({success: true, token: token, status: 'You are successfully logged in!'});
+  }
 });
 
 //for the below- after path argument, need to pass a middleware argument
@@ -54,7 +66,7 @@ router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function(req,
 //   //below doesn't mean no user was foound, but some other error
 //   .catch(err => next(err));
 //**Updating to use passort */
-router.post('/signup', (req, res ) => {
+router.post('/signup', cors.corsWithOptions, (req, res ) => {
   User.register(
     new User({username: req.body.username}),
     req.body.password,
@@ -134,7 +146,7 @@ router.post('/signup', (req, res ) => {
 //     res.end('You are already authenticated!');
 //   }
 //** Week II replace with passport */
-router.post('/login', passport.authenticate('local'), (req, res) => {
+router.post('/login', cors.corsWithOptions, passport.authenticate('local'), (req, res) => {
   //adding to issue a token below
   const token = authenticate.getToken({_id: req.user._id});
   res.statusCode = 200;
@@ -144,7 +156,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
 });
 
 //logging out the user, since not sending info, we will use a get
-router.get('/logout', (req, res, next) => {
+router.get('/logout', cors.corsWithOptions, (req, res, next) => {
   if (req.session) {
     req.session.destroy();
       res.clearCookie('session-id');

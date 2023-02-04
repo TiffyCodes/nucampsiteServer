@@ -5,6 +5,8 @@ const express = require('express');
 const promotionRouter = express.Router();
 const Promotion = require('../models/promotion');
 const authenticate = require('../authenticate');
+//cors- routes week IV add below
+const cors = require('./cors');
 
 promotionRouter.route('/')
 // .all((req, res, next) => {
@@ -16,7 +18,9 @@ promotionRouter.route('/')
 //will catch all, we will use to set properties on the res obj
 //any http with this path will trigger this method
 //set up a path to a get req
-.get((req, res, next) => {
+//cors- routes week IV add below
+.options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+.get(cors.cors, (req, res, next) => {
     //res and headers are set by app.all so only out...
     // res.end(`Will send details of all the promotions to you`);
     Promotion.find()
@@ -30,7 +34,7 @@ promotionRouter.route('/')
     .catch(err => next(err));
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
-.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     // res.end(`Will add the promotion: ${req.body.name} with description: ${req.body.description}`);
     Promotion.create(req.body)
     .then(promotion => {
@@ -41,11 +45,11 @@ promotionRouter.route('/')
     })
     .catch(err => next(err));
 })
-.put(authenticate.verifyUser, (req, res) => {
+.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /promotions');
 })
-.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     //later when we study authentication, we willl explore how to restrict this to only priviledged users
     // res.end('Deleting all promotions')
     Promotion.deleteMany()
@@ -69,7 +73,9 @@ promotionRouter.route('/:promotionId')
 //will catch all, we will use to set properties on the res obj
 //any http with this path will trigger this method
 //set up a path to a get req
-.get((req, res, next) => {
+//cors- routes week IV add below
+.options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+.get(cors.cors, (req, res, next) => {
     //res and headers are set by app.all so only out...
     // res.end(`Will send details of the promotion: ${req.params.promotionId} to you`);
     Promotion.findById(req.params.promotionId)
@@ -81,11 +87,11 @@ promotionRouter.route('/:promotionId')
     .catch(err => next(err));
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
-.post(authenticate.verifyUser, (req, res) => {
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /promotions/${req.params.promotionId}`);
 })
-.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
+.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     // res.write(`Updating the promotion: ${req.params.promotionId} \n`);
     // res.end(`Will update the promotion: ${req.body.name}
     // with description: ${req.body.description}`);
@@ -99,7 +105,7 @@ promotionRouter.route('/:promotionId')
     })
     .catch(err => next(err));
 })
-.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     //later when we study authentication, we willl explore how to restrict this to only priviledged users
     // res.end(`Deleting promotion: ${req.params.promotionId}`)
     Promotion.findByIdAndDelete(req.params.promotionId)

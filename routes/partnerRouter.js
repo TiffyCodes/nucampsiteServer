@@ -5,6 +5,8 @@ const express = require('express');
 const partnerRouter = express.Router();
 const Partner = require('../models/partner');
 const authenticate = require('../authenticate');
+//cors- routes week IV add below
+const cors = require('./cors');
 
 partnerRouter.route('/')
 // .all((req, res, next) => {
@@ -16,7 +18,10 @@ partnerRouter.route('/')
 //will catch all, we will use to set properties on the res obj
 //any http with this path will trigger this method
 //set up a path to a get req
-.get((req, res, next) => {
+
+//cors- routes week IV add below
+.options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+.get(cors.cors, (req, res, next) => {
     //res and headers are set by app.all so only out...
     // res.end('Will send all the partners to you');
     //res and headers are set by app.all so only out...
@@ -31,7 +36,7 @@ partnerRouter.route('/')
     .catch(err => next(err));
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
-.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     // res.end(`Will add the partner: ${req.body.name} with description: ${req.body.description}`);
     Partner.create(req.body)
     .then(partner => {
@@ -42,11 +47,11 @@ partnerRouter.route('/')
     })
     .catch(err => next(err));
 })
-.put(authenticate.verifyUser, (req, res) => {
+.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin,(req, res) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /partners');
 })
-.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     //later when we study authentication, we willl explore how to restrict this to only priviledged users
     // res.end('Deleting all partners')
     Partner.deleteMany()
@@ -69,7 +74,9 @@ partnerRouter.route('/:partnerId')
 //will catch all, we will use to set properties on the res obj
 //any http with this path will trigger this method
 //set up a path to a get req
-.get((req, res, next) => {
+//cors- routes week IV add below
+.options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+.get(cors.cors, (req, res, next) => {
     //res and headers are set by app.all so only out...
     // res.end(`Will send details of the partner: ${req.params.partnerId} to you`);
     Partner.findById(req.params.partnerId)
@@ -81,11 +88,11 @@ partnerRouter.route('/:partnerId')
     .catch(err => next(err));
 })
 //post req for the campsites path, once it hits next at all, it will go to the next relevant method
-.post(authenticate.verifyUser, (req, res) => {
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /partners/${req.params.partnerId}`);
 })
-.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     // res.write(`Updating the partner: ${req.params.partnerId} \n`);
     // res.end(`Will update the partner: ${req.body.name}
     // with description: ${req.body.description}`);
@@ -99,7 +106,7 @@ partnerRouter.route('/:partnerId')
     })
     .catch(err => next(err));
 })
-.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     //later when we study authentication, we willl explore how to restrict this to only priviledged users
     // res.end(`Deleting partner: ${req.params.partnerId}`)
     Partner.findByIdAndDelete(req.params.partnerId)

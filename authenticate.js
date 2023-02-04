@@ -7,6 +7,8 @@ const ExtractJwt = require('passport-jwt').ExtractJwt;
 const jwt = require('jsonwebtoken');
 const config = require('./config.js');
 const { authenticate } = require('passport');
+//added week IV
+const FacebookTokenStrategy = require('passport-facebook-token');
 
 //below requires a verify pw fx- will use the authenticate method (a method on the user model user.auth..)
 exports.local = passport.use(new LocalStrategy(User.authenticate()));
@@ -59,6 +61,38 @@ exports.verifyUser = passport.authenticate('jwt', {session: false});
 //         next(new Error('Not Cahrlie'))
 //     }
 // }
+
+//added week IV FB
+exports.facebookPassport = passport.use(
+    new FacebookTokenStrategy(
+        {
+            clientID: config.facebook.clientId,
+            clientSecret: config.facebook.clientSecret
+        }, 
+        (accessToken, refreshToken, profile, done) => {
+            User.findOne({facebookId: profile.id}, (err, user) => {
+                if (err) {
+                    return done(err, false);
+                }
+                if (!err && user) {
+                    return done(null, user);
+                } else {
+                    user = new User({ username: profile.displayName });
+                    user.facebookId = profile.id;
+                    user.firstname = profile.name.givenName;
+                    user.lastname = profile.name.familyName;
+                    user.save((err, user) => {
+                        if (err) {
+                            return done(err, false);
+                        } else {
+                            return done(null, user);
+                        }
+                    });
+                }
+            });
+        }
+    )
+);
 
 exports.verifyAdmin = function(req, res, next) {
     // if (req.user.user === 'Simba') {
